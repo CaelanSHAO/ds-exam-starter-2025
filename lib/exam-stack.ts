@@ -126,11 +126,19 @@ export class ExamStack extends cdk.Stack {
       },
     });
 
-    // 5. SNS Topic 1 -> SQS Queue A
-    topic1.addSubscription(new subs.SqsSubscription(queueA));
+    // 5. SNS Topic 1 -> SQS Queue A（只允许 Ireland 或 China）
+    topic1.addSubscription(new subs.SqsSubscription(queueA, {
+      filterPolicy: {
+        "address.country": sns.SubscriptionFilter.stringFilter({ allowlist: ["Ireland", "China"] })
+      }
+    }));
 
-    // 6. SNS Topic 1 -> Lambda Y
-    topic1.addSubscription(new subs.LambdaSubscription(lambdaYFn));
+    // 6. SNS Topic 1 -> Lambda Y（只允许非 Ireland/China）
+    topic1.addSubscription(new subs.LambdaSubscription(lambdaYFn, {
+      filterPolicy: {
+        "address.country": sns.SubscriptionFilter.stringFilter({ denylist: ["Ireland", "China"] })
+      }
+    }));
 
     // 7. SQS Queue A -> Lambda X
     const queueAEventSource = new events.SqsEventSource(queueA, {

@@ -19,7 +19,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
           new GetCommand({
             TableName: process.env.TABLE_NAME,
             Key: {
-              movieId: movieId,
+              movieId: Number(movieId),
               role: role
             }
           })
