@@ -102,6 +102,11 @@ export class ExamStack extends cdk.Stack {
       receiveMessageWaitTime: cdk.Duration.seconds(5),
     });
 
+    // 新增：创建 SQS Queue B
+    const queueB = new sqs.Queue(this, "queueB", {
+      receiveMessageWaitTime: cdk.Duration.seconds(5),
+    });
+
     // 3. Lambda X（消费 Queue A）
     const lambdaXFn = new lambdanode.NodejsFunction(this, "LambdaXFn", {
       architecture: lambda.Architecture.ARM_64,
@@ -123,6 +128,7 @@ export class ExamStack extends cdk.Stack {
       memorySize: 128,
       environment: {
         REGION: "eu-west-1",
+        QUEUE_B_URL: queueB.queueUrl,
       },
     });
 
@@ -146,6 +152,9 @@ export class ExamStack extends cdk.Stack {
       maxBatchingWindow: cdk.Duration.seconds(5),
     });
     lambdaXFn.addEventSource(queueAEventSource);
+
+    // 授权 Lambda Y 可以向 Queue B 发送消息
+    queueB.grantSendMessages(lambdaYFn);
   }
 }
   

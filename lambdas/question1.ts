@@ -48,9 +48,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
           new QueryCommand({
             TableName: process.env.TABLE_NAME,
             KeyConditionExpression: "movieId = :movieId",
-            ExpressionAttributeValues: {
-              ":movieId": movieId
-            }
+            ExpressionAttributeValues: { ":movieId": Number(movieId) }
           })
         );
 
