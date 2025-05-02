@@ -40,6 +40,7 @@ export class ExamStack extends cdk.Stack {
         REGION: "eu-west-1",
       },
     });
+    table.grantReadData(question1Fn);
 
     new custom.AwsCustomResource(this, "moviesddbInitData", {
       onCreate: {
@@ -70,8 +71,15 @@ export class ExamStack extends cdk.Stack {
       },
     });
 
-    const anEndpoint = api.root.addResource("patha");
+    // crew/movies/{movieId} 路径和 GET 方法
+    const crewEndpoint = api.root.addResource("crew");
+    const moviesEndpoint = crewEndpoint.addResource("movies");
+    const specificMovieEndpoint = moviesEndpoint.addResource("{movieId}");
 
+    specificMovieEndpoint.addMethod(
+      "GET",
+      new apig.LambdaIntegration(question1Fn, { proxy: true })
+    );
 
     // ==================================
     // Question 2 - Event-Driven architecture
