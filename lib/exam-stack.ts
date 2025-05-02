@@ -90,18 +90,19 @@ export class ExamStack extends cdk.Stack {
       publicReadAccess: false,
     });
 
+    // =========================
+    // EDA Architecture
+    // 1. 创建 SNS Topic
     const topic1 = new sns.Topic(this, "Topic1", {
       displayName: "Exam topic",
     });
-    
-    const queueB = new sqs.Queue(this, "QueueB", {
-      receiveMessageWaitTime: cdk.Duration.seconds(5),
-    });
 
+    // 2. 创建 SQS Queue A
     const queueA = new sqs.Queue(this, "queueA", {
       receiveMessageWaitTime: cdk.Duration.seconds(5),
     });
-    
+
+    // 3. Lambda X（消费 Queue A）
     const lambdaXFn = new lambdanode.NodejsFunction(this, "LambdaXFn", {
       architecture: lambda.Architecture.ARM_64,
       runtime: lambda.Runtime.NODEJS_22_X,
@@ -113,6 +114,7 @@ export class ExamStack extends cdk.Stack {
       },
     });
 
+    // 4. Lambda Y（直接订阅 SNS Topic）
     const lambdaYFn = new lambdanode.NodejsFunction(this, "LambdaYFn", {
       architecture: lambda.Architecture.ARM_64,
       runtime: lambda.Runtime.NODEJS_22_X,
@@ -123,7 +125,19 @@ export class ExamStack extends cdk.Stack {
         REGION: "eu-west-1",
       },
     });
-    
+
+    // 5. SNS Topic 1 -> SQS Queue A
+    topic1.addSubscription(new subs.SqsSubscription(queueA));
+
+    // 6. SNS Topic 1 -> Lambda Y
+    topic1.addSubscription(new subs.LambdaSubscription(lambdaYFn));
+
+    // 7. SQS Queue A -> Lambda X
+    const queueAEventSource = new events.SqsEventSource(queueA, {
+      batchSize: 5,
+      maxBatchingWindow: cdk.Duration.seconds(5),
+    });
+    lambdaXFn.addEventSource(queueAEventSource);
   }
 }
   
